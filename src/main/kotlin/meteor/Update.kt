@@ -44,7 +44,6 @@ object Update {
 
                 if (targetFile.exists()) {
                     if (abs(targetFile.length() - file.size.toLong()) > 2) {
-                        if (!targetFile.name.endsWith("meteor-client.cfg"))
                             if (!targetFile.name.endsWith("java.security"))
                                 if (!targetFile.name.endsWith("classlist"))
                                     if (!targetFile.name.endsWith("blocked.certs"))
