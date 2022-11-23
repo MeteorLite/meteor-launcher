@@ -1,4 +1,4 @@
-package meteor.launcher
+package meteor.model
 
 class File {
     var name: String = ""

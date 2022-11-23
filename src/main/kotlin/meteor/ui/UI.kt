@@ -1,4 +1,4 @@
-package meteor
+package meteor.ui
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
@@ -21,10 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.Gson
 import kotlinx.coroutines.delay
-import meteor.Update.currentUpdateFile
-import meteor.launcher.LauncherUpdate
+import meteor.util.Update
+import meteor.util.Update.currentUpdateFile
+import meteor.model.LauncherUpdate
 import java.io.File
-import java.nio.charset.Charset
 
 object UI {
     val launcherDIr = File(System.getProperty("user.home") + "/.meteor/launcher/")
@@ -116,7 +116,7 @@ object UI {
                 Text(text = "Latest:   " + Update.currentRelease.version, color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont)
             }
             //Meteor
-            Box(modifier = textMod.offset(x = 110.dp, y = 10.dp)) {
+            Box(modifier = textMod.offset(x = 110.dp, y = 5.dp)) {
                 Text(text = brand, color = Color.Cyan, fontSize = 32.sp, fontFamily = Font.robotoFont)
             }
             LinearProgressIndicator(progress = progress, modifier = Modifier.align(Alignment.BottomStart).height(20.dp).fillMaxWidth().clip(

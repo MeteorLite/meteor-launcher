@@ -1,16 +1,17 @@
-package meteor
+package meteor.util
 
 import androidx.compose.ui.graphics.Color
 import com.google.gson.Gson
-import meteor.UI.currentFile
-import meteor.UI.currentProgress
-import meteor.UI.currentVersion
-import meteor.UI.currentVersionColor
-import meteor.UI.executable
-import meteor.UI.launcherDIr
-import meteor.UI.modulesFile
-import meteor.UI.updating
-import meteor.launcher.LauncherUpdate
+import meteor.ui.UI.currentFile
+import meteor.ui.UI.currentProgress
+import meteor.ui.UI.currentVersion
+import meteor.ui.UI.currentVersionColor
+import meteor.ui.UI.executable
+import meteor.ui.UI.launcherDIr
+import meteor.ui.UI.modulesFile
+import meteor.ui.UI.updating
+import meteor.model.LauncherUpdate
+import meteor.ui.UI
 import java.io.File
 import java.net.URL
 import java.nio.charset.Charset

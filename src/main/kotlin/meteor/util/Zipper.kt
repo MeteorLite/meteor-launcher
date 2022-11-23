@@ -1,6 +1,6 @@
-package meteor
+package meteor.util
 
-import meteor.UI.modulesFile
+import meteor.ui.UI.modulesFile
 import java.io.File
 
 object Zipper {

@@ -1,4 +1,4 @@
-package meteor.launcher
+package meteor.model
 
 class LauncherUpdate {
     var version: String = ""

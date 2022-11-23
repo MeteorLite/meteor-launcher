@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "meteor"
-version = "0.9.3"
+version = "0.9.4"
 
 repositories {
     google()
@@ -38,7 +38,7 @@ tasks.compileKotlin {
 
 compose.desktop {
     application {
-        mainClass = "MainKt"
+        mainClass = "meteor.Main"
         nativeDistributions {
             includeAllModules = true
             targetFormats(TargetFormat.Dmg, TargetFormat.Exe, TargetFormat.Deb)
