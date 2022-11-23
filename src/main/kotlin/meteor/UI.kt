@@ -4,12 +4,14 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.material.darkColors
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
@@ -19,15 +21,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.Gson
 import kotlinx.coroutines.delay
+import meteor.Update.currentUpdateFile
 import meteor.launcher.LauncherUpdate
 import java.io.File
 import java.nio.charset.Charset
 
 object UI {
     val launcherDIr = File(System.getProperty("user.home") + "/.meteor/launcher/")
-    val currentUpdateFile = File(launcherDIr,"currentUpdate.json")
-    val modulesFile = File(System.getProperty("user.home") + "/.meteor/launcher/meteor-client/runtime/lib/modules")
-    val executable = System.getProperty("user.home") + "/.meteor/launcher/meteor-client/meteor-client.exe"
+
+    val modulesFile = File(System.getProperty("user.home") + "/.meteor/launcher/runtime/lib/modules")
+    val executable = "cmd /c start " + System.getProperty("user.home") + "/.meteor/launcher/client.bat"
     var requiresUpdate = false
     var currentVersion = ""
     var currentVersionColor = Color.Green
@@ -71,8 +74,8 @@ object UI {
             requiresUpdate = true
         else {
             try {
-                val localUpdate = Gson().fromJson(currentUpdateFile.readText(charset = Charset.forName("UTF-8")), LauncherUpdate::class.java)
-                currentVersion = localUpdate.version
+                val localUpdate = Gson().fromJson(currentUpdateFile.readText(), LauncherUpdate::class.java)
+                //currentVersion = localUpdate.version
             } catch (e: Exception) {
                 currentVersion = "broken"
                 requiresUpdate = true
@@ -101,28 +104,30 @@ object UI {
                 color = currentVersionColor
             }
         }
-        BoxWithConstraints(modifier = Modifier.width(600.dp).height(300.dp).background(darkThemeColors.background)) {
+        BoxWithConstraints(modifier = Modifier.width(600.dp).height(130.dp).background(darkThemeColors.background)) {
             val constraints = this
 
-            //Meteor
-            Box(modifier = textMod.offset(x = 110.dp, y = 169.dp)) {
-                Text(text = brand, color = Color.Cyan, fontSize = 32.sp, fontFamily = Font.robotoFont)
-            }
             //Current
-            Box(modifier = textMod.offset(x = 110.dp, y = 206.dp)) {
-                Text(text = "Current: $version", color = color, fontSize = 14.sp, fontFamily = Font.robotoFont)
+            Box(modifier = textMod.offset(x = 110.dp, y = 45.dp)) {
+                Text(text = "Current version: $currentVersion", color = color, fontSize = 14.sp, fontFamily = Font.robotoFont)
             }
             //Latest
-            Box(modifier = textMod.offset(x = 110.dp, y = 226.dp)) {
+            Box(modifier = textMod.offset(x = 110.dp, y = 60.dp)) {
                 Text(text = "Latest:   " + Update.currentRelease.version, color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont)
             }
-            LinearProgressIndicator(progress = progress, modifier = Modifier.align(Alignment.BottomStart).height(20.dp).fillMaxWidth(), color = Color.Cyan)
+            //Meteor
+            Box(modifier = textMod.offset(x = 110.dp, y = 10.dp)) {
+                Text(text = brand, color = Color.Cyan, fontSize = 32.sp, fontFamily = Font.robotoFont)
+            }
+            LinearProgressIndicator(progress = progress, modifier = Modifier.align(Alignment.BottomStart).height(20.dp).fillMaxWidth().clip(
+                RoundedCornerShape(50)
+            ).padding(vertical = 4.dp), color = Color.Cyan)
             BrandBadge(constraints)
         }
         //Checking/Updating:
         if (file != "")
-            Box(modifier = Modifier.offset(x = 110.dp, y = 244.dp).fillMaxWidth()) {
-                Text(text = "Checking/Updating: $file.re", color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont, maxLines = 2)
+            Box(modifier = Modifier.offset(x = 110.dp, y = 75.dp).fillMaxWidth(.7f)) {
+                Text(text = "Updating: $file", color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont, maxLines = 2)
             }
         if (!startedThread) {
             Thread {

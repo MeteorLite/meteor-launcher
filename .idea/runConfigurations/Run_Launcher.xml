@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run Launcher" type="JetRunConfigurationType">
-    <option name="MAIN_CLASS_NAME" value="MainKt" />
+    <option name="MAIN_CLASS_NAME" value="Main" />
     <module name="meteor-launcher.main" />
     <shortenClasspath name="NONE" />
     <method v="2">

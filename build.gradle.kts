@@ -1,6 +1,5 @@
 import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.6.10"
@@ -8,7 +7,7 @@ plugins {
 }
 
 group = "meteor"
-version = "0.9.1"
+version = "0.9.3"
 
 repositories {
     google()

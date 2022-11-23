@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Color
 import com.google.gson.Gson
 import meteor.UI.currentFile
 import meteor.UI.currentProgress
-import meteor.UI.currentUpdateFile
 import meteor.UI.currentVersion
 import meteor.UI.currentVersionColor
 import meteor.UI.executable
@@ -20,6 +19,7 @@ import kotlin.system.exitProcess
 
 object Update {
     val currentReleaseURL = URL("https://raw.githubusercontent.com/MeteorLite/Hosting/main/release/release.json")
+    val currentUpdateFile = File(UI.launcherDIr,"currentUpdate.json")
     private val currentReleaseText = currentReleaseURL.readText(charset = Charset.forName("UTF-8"))
     val currentRelease = Gson().fromJson(currentReleaseText, LauncherUpdate::class.java)
 
@@ -44,14 +44,14 @@ object Update {
 
                 if (targetFile.exists()) {
                     if (abs(targetFile.length() - file.size.toLong()) > 2) {
-                            if (!targetFile.name.endsWith("java.security"))
-                                if (!targetFile.name.endsWith("classlist"))
-                                    if (!targetFile.name.endsWith("blocked.certs"))
-                                        if (!targetFile.name.endsWith("tzmappings"))
-                                            if (abs(targetFile.length() - file.size.toLong()) < 100) {
-                                                updating = true
-                                                shouldUpdate = true
-                                            }
+                        if (!targetFile.name.endsWith("java.security") &&
+                            !targetFile.name.endsWith("classlist") &&
+                            !targetFile.name.endsWith("blocked.certs") &&
+                            !targetFile.name.endsWith("tzmappings") &&
+                            abs(targetFile.length() - file.size.toLong()) < 100 ) {
+                            updating = true
+                            shouldUpdate = true
+                        }
                     }
                 } else {
                     updating = true
@@ -59,8 +59,6 @@ object Update {
                 }
 
                 if (shouldUpdate) {
-                    println("${targetFile.length()}-${file.size}")
-                    println(remoteFile.toString())
                     targetParent.mkdirs()
                     targetFile.writeBytes(remoteFile.readBytes())
                 }
