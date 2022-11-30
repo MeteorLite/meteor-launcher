@@ -21,19 +21,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.Gson
 import kotlinx.coroutines.delay
-import meteor.util.Update
-import meteor.util.Update.currentUpdateFile
+import meteor.util.Updater
+import meteor.util.Updater.currentUpdateFile
 import meteor.model.LauncherUpdate
 import java.io.File
 
 object UI {
     val launcherDIr = File(System.getProperty("user.home") + "/.meteor/launcher/")
-
     val modulesFile = File(System.getProperty("user.home") + "/.meteor/launcher/runtime/lib/modules")
-    val executable = "cmd /c start " + System.getProperty("user.home") + "/.meteor/launcher/client.bat"
+    val clientExecutable = "cmd /c start " + System.getProperty("user.home") + "/.meteor/launcher/client.bat"
+
     var requiresUpdate = false
-    var currentVersion = ""
-    var currentVersionColor = Color.Green
+    var currentVersion = mutableStateOf("")
+    var currentVersionColor = Color.Red
     var currentFile = ""
     var currentProgress = 0f
     var startedThread = false
@@ -41,7 +41,7 @@ object UI {
 
 
     @Composable
-    fun BrandBadge(constraints: BoxWithConstraintsScope) {
+    fun brandBadge(constraints: BoxWithConstraintsScope) {
         val bitmap: ImageBitmap = useResource("brand/badge.png") { loadImageBitmap(it) }
         Box(modifier = Modifier.width(100.dp).offset(y = constraints.maxHeight - 125.dp).background(darkThemeColors.background), contentAlignment = Alignment.TopEnd) {
             Image( bitmap = bitmap, contentDescription = "Brand Badge", filterQuality = FilterQuality.High)
@@ -64,7 +64,9 @@ object UI {
 
     @Composable
     @Preview
-    fun Launcher() {
+    fun launcher() {
+        if (!launcherDIr.exists())
+            Updater.freshInstall = true
         if (!launcherDIr.exists()) {
             launcherDIr.mkdirs()
             requiresUpdate = true
@@ -72,25 +74,25 @@ object UI {
 
         if (!currentUpdateFile.exists())
             requiresUpdate = true
-        else {
+
+        if (!Updater.freshInstall) {
             try {
                 val localUpdate = Gson().fromJson(currentUpdateFile.readText(), LauncherUpdate::class.java)
-                //currentVersion = localUpdate.version
+                currentVersion.value = localUpdate.version
             } catch (e: Exception) {
-                currentVersion = "broken"
+                currentVersion.value = "broken"
                 requiresUpdate = true
             }
         }
-
-        if (currentVersion == "") {
-            currentVersion = "missing"
-            currentUpdateFile.writeBytes(Update.currentReleaseURL.readBytes())
+        else {
+            currentVersion.value = "missing"
+            currentUpdateFile.writeBytes(Updater.currentReleaseURL.readBytes())
         }
 
         val brand by remember { mutableStateOf("Meteor launcher") }
         var file by remember { mutableStateOf(currentFile) }
         var progress by remember { mutableStateOf(currentProgress) }
-        var version by remember { mutableStateOf(currentVersion) }
+        var version by remember { mutableStateOf(currentVersion.value) }
         var color by remember { mutableStateOf(currentVersionColor) }
         val textMod = Modifier.width(200.dp).height(40.dp).background(darkThemeColors.background)
         LaunchedEffect(Unit) {
@@ -98,7 +100,7 @@ object UI {
                 delay(100) // update once a second
                 file = currentFile
                 progress = currentProgress
-                version = currentVersion
+                version = currentVersion.value
                 if (updating)
                     currentVersionColor = Color.Yellow
                 color = currentVersionColor
@@ -109,11 +111,11 @@ object UI {
 
             //Current
             Box(modifier = textMod.offset(x = 110.dp, y = 45.dp)) {
-                Text(text = "Current version: $currentVersion", color = color, fontSize = 14.sp, fontFamily = Font.robotoFont)
+                Text(text = "Current version: $version", color = color, fontSize = 14.sp, fontFamily = Font.robotoFont)
             }
             //Latest
             Box(modifier = textMod.offset(x = 110.dp, y = 60.dp)) {
-                Text(text = "Latest:   " + Update.currentRelease.version, color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont)
+                Text(text = "Latest:   " + Updater.currentRelease.version, color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont)
             }
             //Meteor
             Box(modifier = textMod.offset(x = 110.dp, y = 5.dp)) {
@@ -122,7 +124,7 @@ object UI {
             LinearProgressIndicator(progress = progress, modifier = Modifier.align(Alignment.BottomStart).height(20.dp).fillMaxWidth().clip(
                 RoundedCornerShape(50)
             ).padding(vertical = 4.dp), color = Color.Cyan)
-            BrandBadge(constraints)
+            brandBadge(constraints)
         }
         //Checking/Updating:
         if (file != "")
@@ -131,7 +133,7 @@ object UI {
             }
         if (!startedThread) {
             Thread {
-                Update.update()
+                Updater.update()
             }.start()
             startedThread = true
         }
