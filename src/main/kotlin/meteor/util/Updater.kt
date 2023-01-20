@@ -1,11 +1,8 @@
 package meteor.util
 
-import androidx.compose.ui.graphics.Color
 import com.google.gson.Gson
 import meteor.ui.UI.currentFile
 import meteor.ui.UI.currentProgress
-import meteor.ui.UI.currentVersion
-import meteor.ui.UI.currentVersionColor
 import meteor.ui.UI.clientExecutable
 import meteor.ui.UI.launcherDIr
 import meteor.ui.UI.modulesFile
@@ -24,8 +21,7 @@ object Updater {
     private val currentReleaseText = currentReleaseURL.readText()
     val currentRelease = Gson().fromJson(currentReleaseText, LauncherUpdate::class.java)
     var freshInstall = false
-    val filesToUpdate = currentRelease.files.size
-    var updatedFiles = 0
+
     fun generateCRC(file: File): String {
         val crc32 = CRC32()
         val bytes = file.readBytes()
@@ -33,9 +29,44 @@ object Updater {
         return crc32.value.toString()
     }
 
+    fun checkStrangeFile(fileData: meteor.model.File, localFile: File, remoteFile: URL, filesToUpdate: ArrayList<meteor.model.File>) {
+        if (localFile.readText() != remoteFile.readText())
+            filesToUpdate.add(fileData)
+    }
+
+    fun getUpdateList(it: LauncherUpdate) : ArrayList<meteor.model.File> {
+        val filesToUpdate = ArrayList<meteor.model.File>()
+        for (file in it.files) {
+            val localFile = File(launcherDIr.absolutePath + "/" + file.name)
+            if (localFile.exists()) {
+                val crc = generateCRC(localFile)
+                if (file.hash != crc) {
+                    val remoteFile = URL(baseURLString + file.name.replaceFirst("meteor-client\\", "/").replace("\\", "/"))
+                    when (file.name) {
+                        "\\app\\client.cfg",
+                        "\\runtime\\conf\\security\\java.security",
+                        "\\runtime\\lib\\classlist",
+                        "\\runtime\\lib\\security\\blocked.certs",
+                        "\\runtime\\lib\\tzmappings",
+                        "\\runtime\\release"-> checkStrangeFile(file, localFile, remoteFile, filesToUpdate)
+                        else -> {
+                            println("file: ${file.name} CRC: $crc Expected: ${file.hash}")
+                            filesToUpdate.add(file)
+                        }
+                    }
+                }
+            } else {
+                filesToUpdate.add(file)
+            }
+        }
+        return filesToUpdate
+    }
+
     fun updateFiles(it: LauncherUpdate) {
-        val max = it.files.size
-        for ((i, file) in it.files.withIndex()) {
+        val filesToUpdate = getUpdateList(it)
+
+        val max = filesToUpdate.size
+        for ((i, file) in filesToUpdate.withIndex()) {
             currentFile = file.name
             currentProgress = i.toFloat() / max.toFloat()
             val remoteFile = URL(baseURLString + file.name.replaceFirst("meteor-client\\", "/").replace("\\", "/"))
@@ -55,7 +86,9 @@ object Updater {
 
             if (shouldUpdate) {
                 targetParent.mkdirs()
+                targetFile.delete()
                 targetFile.writeBytes(remoteFile.readBytes())
+                println("Updating: $remoteFile -> ${targetFile.absolutePath}")
             }
         }
     }
@@ -91,15 +124,6 @@ object Updater {
     fun update() {
         currentUpdateFile.writeBytes(currentReleaseURL.readBytes())
         val update = Gson().fromJson(currentReleaseURL.readText(charset = Charset.forName("UTF-8")), LauncherUpdate::class.java)
-        currentVersionColor = if (currentVersion.value == currentRelease.version) {
-            if (updatedFiles >= filesToUpdate) {
-                Color.Green
-            } else {
-                Color.Yellow
-            }
-        } else {
-            Color.Red
-        }
         update?.let {
             updateFiles(it)
             updateModules(it)

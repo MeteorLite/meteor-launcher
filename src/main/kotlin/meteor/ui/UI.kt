@@ -33,8 +33,8 @@ object UI {
 
     var requiresUpdate = false
     var currentVersion = mutableStateOf("")
-    var currentVersionColor = Color.Red
-    var currentFile = ""
+    var currentVersionColor = Color.Cyan
+    var currentFile = "Checking for updates..."
     var currentProgress = 0f
     var startedThread = false
     var updating = false
@@ -129,7 +129,10 @@ object UI {
         //Checking/Updating:
         if (file != "")
             Box(modifier = Modifier.offset(x = 110.dp, y = 75.dp).fillMaxWidth(.7f)) {
-                Text(text = "Updating: $file", color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont, maxLines = 2)
+                if (file == "Checking for updates...")
+                    Text(text = file, color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont, maxLines = 2)
+                else
+                    Text(text = "Updating: $file", color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont, maxLines = 2)
             }
         if (!startedThread) {
             Thread {
