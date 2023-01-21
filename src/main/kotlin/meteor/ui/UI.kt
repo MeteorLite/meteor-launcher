@@ -34,7 +34,7 @@ object UI {
     var requiresUpdate = false
     var currentVersion = mutableStateOf("")
     var currentVersionColor = Color.Cyan
-    var currentFile = "Checking for updates..."
+    var status = "Checking for updates..."
     var currentProgress = 0f
     var startedThread = false
     var updating = false
@@ -90,7 +90,7 @@ object UI {
         }
 
         val brand by remember { mutableStateOf("Meteor launcher") }
-        var file by remember { mutableStateOf(currentFile) }
+        var file by remember { mutableStateOf(status) }
         var progress by remember { mutableStateOf(currentProgress) }
         var version by remember { mutableStateOf(currentVersion.value) }
         var color by remember { mutableStateOf(currentVersionColor) }
@@ -98,7 +98,7 @@ object UI {
         LaunchedEffect(Unit) {
             for (i in 1..Int.MAX_VALUE) {
                 delay(100) // update once a second
-                file = currentFile
+                file = status
                 progress = currentProgress
                 version = currentVersion.value
                 if (updating)
