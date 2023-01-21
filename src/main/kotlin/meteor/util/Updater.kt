@@ -1,23 +1,32 @@
 package meteor.util
 
 import com.google.gson.Gson
-import meteor.ui.UI.currentFile
-import meteor.ui.UI.currentProgress
-import meteor.ui.UI.clientExecutable
-import meteor.ui.UI.launcherDIr
-import meteor.ui.UI.modulesFile
-import meteor.ui.UI.updating
 import meteor.model.LauncherUpdate
+import meteor.ui.UI.clientExecutable
+import meteor.ui.UI.status
+import meteor.ui.UI.currentProgress
+import meteor.ui.UI.launcherDIr
+import meteor.ui.UI.updating
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
 import java.net.URL
 import java.nio.charset.Charset
 import java.util.zip.CRC32
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
 import kotlin.system.exitProcess
 
+
 object Updater {
-    val baseURLString = "https://github.com/MeteorLite/Hosting/raw/main/release"
+    val hostingURLString = "https://github.com/MeteorLite/Hosting/raw/main"
+    val baseURLString = "$hostingURLString/release"
     val currentReleaseURL = URL("$baseURLString/release.json")
+    val currentRuntimeVersion = URL("$baseURLString/runtime.version").readText()
     val currentUpdateFile = File(launcherDIr,"currentUpdate.json")
+    val currentRuntimeFile = File(launcherDIr,"runtime-$currentRuntimeVersion.zip")
+    val localRuntimeDir = File(launcherDIr,"runtime")
     private val currentReleaseText = currentReleaseURL.readText()
     val currentRelease = Gson().fromJson(currentReleaseText, LauncherUpdate::class.java)
     var freshInstall = false
@@ -29,11 +38,6 @@ object Updater {
         return crc32.value.toString()
     }
 
-    fun checkStrangeFile(fileData: meteor.model.File, localFile: File, remoteFile: URL, filesToUpdate: ArrayList<meteor.model.File>) {
-        if (localFile.readText() != remoteFile.readText())
-            filesToUpdate.add(fileData)
-    }
-
     fun getUpdateList(it: LauncherUpdate) : ArrayList<meteor.model.File> {
         val filesToUpdate = ArrayList<meteor.model.File>()
         for (file in it.files) {
@@ -43,12 +47,10 @@ object Updater {
                 if (file.hash != crc) {
                     val remoteFile = URL(baseURLString + file.name.replaceFirst("meteor-client\\", "/").replace("\\", "/"))
                     when (file.name) {
-                        "\\app\\client.cfg",
-                        "\\runtime\\conf\\security\\java.security",
-                        "\\runtime\\lib\\classlist",
-                        "\\runtime\\lib\\security\\blocked.certs",
-                        "\\runtime\\lib\\tzmappings",
-                        "\\runtime\\release"-> checkStrangeFile(file, localFile, remoteFile, filesToUpdate)
+                        "\\app\\client.cfg" -> {
+                            if (localFile.readText() != remoteFile.readText())
+                                filesToUpdate.add(file)
+                        }
                         else -> {
                             println("file: ${file.name} CRC: $crc Expected: ${file.hash}")
                             filesToUpdate.add(file)
@@ -67,69 +69,94 @@ object Updater {
 
         val max = filesToUpdate.size
         for ((i, file) in filesToUpdate.withIndex()) {
-            currentFile = file.name
+            status = file.name
             currentProgress = i.toFloat() / max.toFloat()
             val remoteFile = URL(baseURLString + file.name.replaceFirst("meteor-client\\", "/").replace("\\", "/"))
             val targetFile = File(launcherDIr.absolutePath + "/" + file.name)
             val targetParent = File(targetFile.parent)
-            var shouldUpdate = false
 
-            if (targetFile.exists()) {
-                if (file.hash != generateCRC(targetFile)) {
-                    updating = true
-                    shouldUpdate = true
-                }
-            } else {
-                updating = true
-                shouldUpdate = true
-            }
-
-            if (shouldUpdate) {
-                targetParent.mkdirs()
-                targetFile.delete()
-                targetFile.writeBytes(remoteFile.readBytes())
-                println("Updating: $remoteFile -> ${targetFile.absolutePath}")
-            }
+            targetParent.mkdirs()
+            targetFile.delete()
+            targetFile.writeBytes(remoteFile.readBytes())
+            println("Updating: $remoteFile -> ${targetFile.absolutePath}")
         }
     }
 
-    fun updateModules(it: LauncherUpdate) {
-        val max = it.modulesParts.size
-        if (!modulesFile.exists()) {
-            for ((i, file) in it.modulesParts.withIndex()) {
-                currentFile = file.name
-                currentProgress = i.toFloat() / max.toFloat()
-                val remoteFile = URL(baseURLString + "/" + file.name.replace("\\", "/"))
-                val targetFile = File(launcherDIr.absolutePath + "/" + file.name)
-                val targetParent = File(targetFile.parent)
-                var shouldUpdate = false
+    fun updateRuntime() {
+        val runtimeURL = URL("$hostingURLString/runtime-$currentRuntimeVersion.zip")
+        val runtimeSize = runtimeURL.openConnection().contentLength
 
-                if (targetFile.exists()) {
-                    if (file.hash != generateCRC(targetFile)) {
-                        shouldUpdate = true
+        var needsUpdate = false
+
+        val runtimeSizeMismatch = currentRuntimeFile.length().toInt() != runtimeSize
+
+        if (!currentRuntimeFile.exists() || !localRuntimeDir.exists() || runtimeSizeMismatch) {
+            needsUpdate = true
+        }
+
+        if (needsUpdate) {
+            if (runtimeSizeMismatch) {
+                status = "Downloading JDK runtime $currentRuntimeVersion... This may take a while."
+                currentRuntimeFile.writeBytes(runtimeURL.readBytes())
+            }
+        }
+
+        status = "Checking/Updating JDK runtime $currentRuntimeVersion..."
+        unzipRuntime()
+    }
+
+    fun unzipRuntime() {
+        val buffer = ByteArray(1024)
+        val zis = ZipInputStream(FileInputStream(currentRuntimeFile))
+        var zipEntry: ZipEntry? = zis.nextEntry
+        while (zipEntry != null) {
+            val newFile: File = newFile(launcherDIr, zipEntry)
+            if (zipEntry.isDirectory) {
+                if (!newFile.isDirectory && !newFile.mkdirs()) {
+                    throw IOException("Failed to create directory $newFile")
+                }
+            } else {
+                val parent = newFile.parentFile
+                if (!parent.isDirectory && !parent.mkdirs()) {
+                    throw IOException("Failed to create directory $parent")
+                }
+
+                if (zipEntry.size != newFile.length()) {
+                    val fos = FileOutputStream(newFile)
+                    var len: Int
+                    while (zis.read(buffer).also { len = it } > 0) {
+                        fos.write(buffer, 0, len)
                     }
-                } else shouldUpdate = true
-
-                if (shouldUpdate) {
-                    println("${targetFile.length()}-${file.size}")
-                    println(remoteFile.toString())
-                    targetParent.mkdirs()
-                    targetFile.writeBytes(remoteFile.readBytes())
+                    fos.close()
                 }
             }
-            Zipper.zipModules()
+            zipEntry = zis.nextEntry
         }
+
+        zis.closeEntry()
+        zis.close()
+    }
+
+    @Throws(IOException::class)
+    fun newFile(destinationDir: File, zipEntry: ZipEntry): File {
+        val destFile = File(destinationDir, zipEntry.name)
+        val destDirPath = destinationDir.canonicalPath
+        val destFilePath = destFile.canonicalPath
+        if (!destFilePath.startsWith(destDirPath + File.separator)) {
+            throw IOException("Entry is outside of the target dir: " + zipEntry.name)
+        }
+        return destFile
     }
 
     fun update() {
         currentUpdateFile.writeBytes(currentReleaseURL.readBytes())
         val update = Gson().fromJson(currentReleaseURL.readText(charset = Charset.forName("UTF-8")), LauncherUpdate::class.java)
         update?.let {
+            updateRuntime()
             updateFiles(it)
-            updateModules(it)
             updating = false
             currentProgress = 1f
-            currentFile = ""
+            status = ""
             Runtime.getRuntime().exec(clientExecutable)
             exitProcess(0)
         }
