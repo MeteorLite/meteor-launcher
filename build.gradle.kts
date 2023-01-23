@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "meteor"
-version = "0.9.7"
+version = "0.9.8"
 
 repositories {
     google()

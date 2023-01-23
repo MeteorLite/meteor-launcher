@@ -29,7 +29,7 @@ import java.io.File
 object UI {
     val launcherDIr = File(System.getProperty("user.home") + "/.meteor/launcher/")
     val modulesFile = File(System.getProperty("user.home") + "/.meteor/launcher/runtime/lib/modules")
-    val clientExecutable = "cmd /c start " + System.getProperty("user.home") + "/.meteor/launcher/client.bat"
+    val clientExecutable = "cmd /c start \"\" " + "\"" + System.getProperty("user.home") + "\\.meteor\\launcher\\client.bat" + "\""
 
     var requiresUpdate = false
     var currentVersion = mutableStateOf("")
