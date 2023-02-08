@@ -7,7 +7,7 @@ import meteor.ui.UI.launcher
 object Main {
     @JvmStatic
     fun main(args: Array<String>) = application {
-        Window(onCloseRequest = ::exitApplication, state = WindowState(size = WindowSize(600.dp, 130.dp), position = WindowPosition(alignment = Alignment.Center)), undecorated = true, transparent = true, resizable = false) {
+        Window(onCloseRequest = ::exitApplication, state = WindowState(size = WindowSize(500.dp, 130.dp), position = WindowPosition(alignment = Alignment.Center)), undecorated = true, transparent = true, resizable = false) {
             launcher()
         }
     }

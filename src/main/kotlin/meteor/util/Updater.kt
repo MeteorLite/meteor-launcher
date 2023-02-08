@@ -77,7 +77,12 @@ object Updater {
 
             targetParent.mkdirs()
             targetFile.delete()
-            targetFile.writeBytes(remoteFile.readBytes())
+            try {
+                targetFile.writeBytes(remoteFile.readBytes())
+            } catch (e : Exception) {
+                //TODO: Popup dialog informing user of out of date DNS
+                e.printStackTrace()
+            }
             println("Updating: $remoteFile -> ${targetFile.absolutePath}")
         }
     }

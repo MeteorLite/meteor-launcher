@@ -42,8 +42,8 @@ object UI {
 
     @Composable
     fun brandBadge(constraints: BoxWithConstraintsScope) {
-        val bitmap: ImageBitmap = useResource("brand/badge.png") { loadImageBitmap(it) }
-        Box(modifier = Modifier.width(100.dp).offset(y = constraints.maxHeight - 125.dp).background(darkThemeColors.background), contentAlignment = Alignment.TopEnd) {
+        val bitmap: ImageBitmap = useResource("Meteor.ico") { loadImageBitmap(it) }
+        Box(modifier = Modifier.width(100.dp).offset(y = constraints.maxHeight - 120.dp).background(darkThemeColors.background), contentAlignment = Alignment.TopEnd) {
             Image( bitmap = bitmap, contentDescription = "Brand Badge", filterQuality = FilterQuality.High)
         }
     }
@@ -106,25 +106,28 @@ object UI {
                 color = currentVersionColor
             }
         }
-        BoxWithConstraints(modifier = Modifier.width(600.dp).height(130.dp).background(darkThemeColors.background)) {
+        BoxWithConstraints(modifier = Modifier.width(500.dp).height(130.dp).background(Color.Transparent).clip(
+            RoundedCornerShape(size = 20.dp)
+        )) {
             val constraints = this
-
-            //Current
-            Box(modifier = textMod.offset(x = 110.dp, y = 45.dp)) {
-                Text(text = "Current version: $version", color = color, fontSize = 14.sp, fontFamily = Font.robotoFont)
+            Box(modifier = Modifier.fillMaxSize().background(darkThemeColors.background)) {
+                //Current
+                Box(modifier = textMod.offset(x = 110.dp, y = 45.dp)) {
+                    Text(text = "Current version: $version", color = color, fontSize = 14.sp, fontFamily = Font.robotoFont)
+                }
+                //Latest
+                Box(modifier = textMod.offset(x = 110.dp, y = 60.dp)) {
+                    Text(text = "Latest:   " + Updater.currentRelease.version, color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont)
+                }
+                //Meteor
+                Box(modifier = textMod.offset(x = 110.dp, y = 5.dp)) {
+                    Text(text = brand, color = Color.Cyan, fontSize = 32.sp, fontFamily = Font.robotoFont)
+                }
+                LinearProgressIndicator(progress = progress, modifier = Modifier.align(Alignment.BottomStart).height(20.dp).fillMaxWidth().clip(
+                    RoundedCornerShape(50)
+                ).padding(vertical = 4.dp), color = Color.Cyan)
+                brandBadge(constraints)
             }
-            //Latest
-            Box(modifier = textMod.offset(x = 110.dp, y = 60.dp)) {
-                Text(text = "Latest:   " + Updater.currentRelease.version, color = Color.Cyan, fontSize = 14.sp, fontFamily = Font.robotoFont)
-            }
-            //Meteor
-            Box(modifier = textMod.offset(x = 110.dp, y = 5.dp)) {
-                Text(text = brand, color = Color.Cyan, fontSize = 32.sp, fontFamily = Font.robotoFont)
-            }
-            LinearProgressIndicator(progress = progress, modifier = Modifier.align(Alignment.BottomStart).height(20.dp).fillMaxWidth().clip(
-                RoundedCornerShape(50)
-            ).padding(vertical = 4.dp), color = Color.Cyan)
-            brandBadge(constraints)
         }
         //Checking/Updating:
         if (file != "")
